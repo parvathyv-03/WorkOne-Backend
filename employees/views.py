@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Employee
@@ -7,7 +7,7 @@ from .serializers import EmployeeProfileSerializer
 
 # Create your views here.
 
-class EmployeeProfileView(RetrieveAPIView):
+class EmployeeProfileView(RetrieveUpdateAPIView):
     serializer_class =  EmployeeProfileSerializer
     permission_classes = [IsAuthenticated]
 

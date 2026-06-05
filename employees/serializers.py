@@ -35,5 +35,5 @@ class EmployeeProfileSerializer(
             "emergency_alternate_number",
         ]
 
-        def get_full_name(self,obj):
+    def get_full_name(self,obj):
             return f"{obj.user.first_name} {obj.user.last_name}"
