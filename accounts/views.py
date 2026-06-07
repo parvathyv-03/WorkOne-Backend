@@ -4,6 +4,10 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from rest_framework.permissions import IsAuthenticated
+from .serializers import ChangePasswordSerializer 
+from rest_framework.views import APIView
+
 # Create your views here.
 
 @api_view(['POST'])
@@ -29,3 +33,41 @@ def login_view(request):
         {'error':'Invalid credentials'},
         status=status.HTTP_401_UNAUTHORIZED
     )
+
+
+class ChangePasswordView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request):
+        serializer = ChangePasswordSerializer(data= request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+
+        current_password = serializer.validated_data["current_password"]
+        new_password = serializer.validated_data["new_password"]
+
+        if not user.check_password(
+            current_password
+        ):
+            return Response(
+                {
+                    "error":
+                    "Current password is incorrect."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user.set_password(
+            new_password
+        )
+
+        user.save()
+
+        return Response(
+            {
+                "message":
+                "Password changed successfully."
+            }
+        )
