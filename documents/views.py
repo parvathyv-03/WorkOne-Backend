@@ -49,5 +49,6 @@ class UploadDocumentView(APIView):
         )
 
         return Response({
-            "message":"document uploaded successfully."
+            "message":"document uploaded successfully.",
+            "id": document.id
         })
