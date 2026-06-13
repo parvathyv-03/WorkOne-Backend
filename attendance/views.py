@@ -1,4 +1,5 @@
-from datetime import time
+from datetime import time,date
+import calendar
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,12 +25,13 @@ class CheckInView(APIView):
                 status=400
             )
         
-        Attendance.objects.create(user=request.user,check_in=timezone.now())
+        attendance = Attendance.objects.create(user=request.user,check_in=timezone.now())
 
         return Response(
             {
                 "message":
-                "Checked In"
+                "Checked In",
+                "check_in":attendance.check_in
             }
         )
 
@@ -282,3 +284,97 @@ class MonthlyReportView(APIView):
             "insights":insights,
             "rows":rows
         })
+    
+class AttendanceCalendarView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = date.today()
+        records = Attendance.objects.filter(
+            user=request.user,
+            attendance_date__month=today.month,
+            attendance_date__year=today.year
+        )
+
+        attendance_map = {}
+
+        for record in records:
+            attendance_map[
+                record.attendance_date.day
+            ]= record.status
+
+        return Response(attendance_map)
+    
+
+class RecentAttendanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        records = Attendance.objects.filter(
+            user=request.user
+        ).order_by("-attendance_date")[:5]
+
+        data = []
+
+        for record in records:
+            work_hours = "-"
+
+            if record.work_hours:
+                hrs = round(
+                    record.work_hours.total_seconds()/3600,
+                    2
+                )
+
+                work_hours = f"{hrs}h"
+
+            data.append({
+                "date":record.attendance_date,
+                "checkIn": record.check_in.strftime("%I:%M %p") if record.check_in else "-",
+                "checkOut": record.check_out.strftime("%I:%M %p") if record.check_out else "-",
+                "status": record.status,
+                "hours":work_hours
+            })
+
+        return Response(data)
+    
+class AttendanceSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = timezone.now()
+
+        records = Attendance.objects.filter(
+            user=request.user,
+            attendance_date__month=today.month,
+            attendance_date__year=today.year
+        )
+
+        present_days = records.filter(
+            status="Present"
+        ).count()
+
+        absent_days = records.filter(
+            status="Absent"
+        ).count()
+
+        late_days = records.filter(
+            status="Late"
+        ).count()
+
+        total_hours = 0
+
+        for record in records:
+            if record.work_hours:
+                total_hours += (
+                    record.work_hours.total_seconds()
+                    /3600
+                )
+        return Response({
+            "present_days":present_days,
+            "absent_days":absent_days,
+            "late_days":late_days,
+            "total_hours":round(total_hours,2)
+        })
+
+
+
