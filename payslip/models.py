@@ -42,3 +42,4 @@ class Payslip(models.Model):
         choices=STATUS_CHOICES,
         default="Paid"
     )
+    pdf_file = models.FileField(upload_to="payslips/",null=True,blank=True)

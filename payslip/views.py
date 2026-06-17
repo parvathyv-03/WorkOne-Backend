@@ -51,6 +51,8 @@ class PayslipDashboardView(APIView):
                 "month":p.month,
                 "net":p.net_salary,
                 "status":p.status,
+                "pdf_url":p.pdf_file.url
+                    if p.pdf_file else None
             })
 
         deductions = [

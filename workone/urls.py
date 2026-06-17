@@ -28,6 +28,7 @@ urlpatterns = [
     path("api/leave/",include("leave_management.urls")),
     path("api/complaint/",include("complaint.urls")),
     path("api/payslip/",include("payslip.urls")),
+    path("api/notifications/",include("notification.urls"))
 ]
 
 if settings.DEBUG:
