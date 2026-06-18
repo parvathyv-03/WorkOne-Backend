@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from .models import LeaveRequest,LeaveBalance
 from .serializers import LeaveRequestSerializer
+from datetime import datetime
 
 # Create your views here.
 
@@ -12,6 +13,31 @@ class ApplyLeaveView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self,request):
+        start_date = request.data.get("start_date")
+        end_date = request.data.get("end_date")
+
+        start_date = datetime.strptime(start_date,"%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date,"%Y-%m-%d").date()
+
+        overlapping_leave = LeaveRequest.objects.filter(user=request.user,start_date__lte=end_date,end_date__gte=start_date,).exclude(status="Rejected")
+
+        if overlapping_leave.exists():
+            return Response(
+                {
+                    "error":
+                    "You already have a leave request for the selected dates."
+                },
+                status=400
+            )
+        if start_date > end_date:
+            return Response(
+                {
+                    "error":
+                    "End date must be after start date."
+                },
+                status=400
+            )
+
         serializer = LeaveRequestSerializer(data=request.data)
 
         if serializer.is_valid():
