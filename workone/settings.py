@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'complaint',
     'payslip',
     'notification',
+    'hr',
 ]
 
 MIDDLEWARE = [
