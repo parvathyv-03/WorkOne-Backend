@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from accounts.models import User
 from employees.models import Employee
+from attendance.models import Attendance
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -82,3 +83,96 @@ class CreateEmployeeSerializer(serializers.Serializer):
         employee = Employee.objects.create(user=user,**validated_data)
         
         return employee
+    
+class EmployeeListSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username")
+    first_name = serializers.CharField(source="user.first_name")
+    last_name =serializers.CharField(source="user.last_name")
+    email =serializers.CharField(source="user.email")
+    # status = serializers.SerializerMethodField()
+
+    # def get_status(self,obj):
+    #     latest = (
+    #         Attendance.objects
+    #         .filter(user=obj.user)
+    #         .order_by("-attendance_date","-check_in")
+    #         .first()
+    #     )
+
+    #     if latest and latest.check_in and not latest.check_out:
+    #         return "Active"
+        
+    #     return "Inactive"
+
+    class Meta:
+        model = Employee
+        fields = [
+            "employee_id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "department",
+            "designation",
+            "date_of_joining",
+            # "status",
+        ]
+    
+class EmployeeUpdateSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
+    email = serializers.EmailField(source="user.email")
+
+    username = serializers.CharField(source="user.username",read_only=True)
+    role = serializers.CharField(source="user.role",read_only=True)
+
+    class Meta:
+        model = Employee
+        fields = [
+            "id",
+            "employee_id",
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "gender",
+            "marital_status",
+            "email",
+            "mobile_number",
+            "alternate_number",
+            "current_address",
+            "permanent_address",
+            "department",
+            "designation",
+            "employee_type",
+            "date_of_joining",
+            "reporting_manager",
+            "emergency_contact_name",
+            "emergency_relationship",
+            "emergency_contact_number",
+            "emergency_alternate_number",
+            "username",
+            "role",
+        ]
+
+        def update(self,instance,validated_data):
+
+            user_data = validated_data.pop("user",{})
+
+            for attr,value in validated_data.items():
+                setattr(instance,attr,value)
+            instance.save()
+
+            user = instance.user
+
+            if "first_name" in user_data:
+                user.first_name = user_data["first_name"]
+            if "last_name" in user_data:
+                user.last_name = user_data["last_name"]
+            if "email" in user_data:
+                user.email = user_data["email"]
+
+            user.save()
+
+            return instance
+
+            
