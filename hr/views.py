@@ -4,7 +4,8 @@ from rest_framework import status
 from employees.models import Employee
 from accounts.models import User
 from attendance.models import Attendance
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer
+from documents.models import EmployeeDocument
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
@@ -222,3 +223,29 @@ class EmployeeDetailView(APIView):
             {"message": "Employee deleted successfully."},
             status=status.HTTP_200_OK,
         )
+    
+
+# FOR VIEWING EMPLOYEE UPLOADED DOCUMENTS IN HR DASHBOARD
+
+class HRDocumentListView(APIView):
+
+    def get(self,request):
+
+        documents = EmployeeDocument.objects.select_related("user","user__employee").all()
+        serializer = HRDocumentSerializer(documents,many=True,context={"request":request})
+
+        return Response(serializer.data)
+
+class VerifyDocumentView(APIView):
+
+    def patch(self,request,pk):
+
+        document = EmployeeDocument.objects.get(pk=pk)
+
+        document.status = "Verified"
+        document.save()
+
+        return Response({
+            "message":"Document verified successfully."
+        })
+

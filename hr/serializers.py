@@ -2,6 +2,7 @@ from rest_framework import serializers
 from accounts.models import User
 from employees.models import Employee
 from attendance.models import Attendance
+from documents.models import EmployeeDocument
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -154,25 +155,52 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             "role",
         ]
 
-        def update(self,instance,validated_data):
+    def update(self,instance,validated_data):
 
-            user_data = validated_data.pop("user",{})
+        user_data = validated_data.pop("user",{})
 
-            for attr,value in validated_data.items():
-                setattr(instance,attr,value)
-            instance.save()
+        for attr,value in validated_data.items():
+            setattr(instance,attr,value)
+        instance.save()
 
-            user = instance.user
+        user = instance.user
 
-            if "first_name" in user_data:
-                user.first_name = user_data["first_name"]
-            if "last_name" in user_data:
-                user.last_name = user_data["last_name"]
-            if "email" in user_data:
-                user.email = user_data["email"]
+        if "first_name" in user_data:
+            user.first_name = user_data["first_name"]
+        if "last_name" in user_data:
+            user.last_name = user_data["last_name"]
+        if "email" in user_data:
+            user.email = user_data["email"]
 
-            user.save()
+        user.save()
 
-            return instance
+        return instance
 
-            
+class HRDocumentSerializer(serializers.ModelSerializer):
+
+    employee_id = serializers.CharField(source="user.employee.employee_id",read_only=True)
+    employee_name = serializers.SerializerMethodField()
+
+    document_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeDocument
+        fields = [
+            "id",
+            "employee_id",
+            "employee_name",
+            "category",
+            "description",
+            "status",
+            "uploaded_at",
+            "document_url",
+        ]   
+
+    def get_employee_name(self,obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
+    
+    def get_document_url(self,obj):
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.document.url)
+        return obj.document.url
