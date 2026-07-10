@@ -7,5 +7,5 @@ urlpatterns = [
    path("employees/export-pdf/",export_employees_pdf,name="export-employees-pdf"),
    path("employees/<str:employee_id>/",EmployeeDetailView.as_view(),name="employee-detail"),
    path("documents/",HRDocumentListView.as_view()),
-   path("documents<int:pk>/verify/",VerifyDocumentView.as_view()),
+   path("documents/<int:pk>/verify/",VerifyDocumentView.as_view()),
 ]  
