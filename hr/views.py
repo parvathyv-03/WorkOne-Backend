@@ -5,10 +5,12 @@ from employees.models import Employee
 from accounts.models import User
 from attendance.models import Attendance
 from documents.models import EmployeeDocument
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer
+from leave_management.models import LeaveBalance
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
 
 from django.http import HttpResponse
 from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
@@ -249,3 +251,113 @@ class VerifyDocumentView(APIView):
             "message":"Document verified successfully."
         })
 
+
+# FOR LEAVE REQUEST APPROVAL,REJECTION
+
+class HRLeaveListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+
+        leaves = LeaveRequest.objects.select_related(
+            "user",
+            "user__employee"
+        ).order_by("-applied_on")
+
+        serializer = HRLeaveSerializer(
+            leaves,
+            many=True,
+            context={"request":request}
+        )
+
+        return Response(serializer.data)
+    
+
+class HRLeaveDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,pk):
+
+        leave = get_object_or_404(
+            LeaveRequest.objects.select_related(
+                "user",
+                "user__employee"
+            ),
+            pk=pk
+        )
+
+        serializer = HRLeaveSerializer(
+            leave,
+            context={"request":request}
+        )
+        return Response(serializer.data)
+
+
+# (leave approval) 
+
+class ApproveLeaveAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self,request,pk):
+        leave = get_object_or_404(LeaveRequest,pk=pk)
+
+        if leave.status != "Pending":
+            return Response(
+                {"message": "Leave already processed."},
+                status=400
+            )
+        
+        balance = LeaveBalance.objects.get(user=leave.user)
+
+        days = leave.total_days()
+
+        if leave.leave_type == "Casual Leave":
+
+            if balance.casual_leave < days :
+                return Response(
+                    {"message":"Insufficient casual leave balance"},
+                    status=400
+                )
+            
+            balance.casual_leave -= days
+
+        elif leave.leave_type == "Sick Leave":
+            
+            if balance.sick_leave < days:
+                return Response(
+                    {"message":"Insufficient sick leave balance."},
+                    status=400
+                )
+            balance.privilege_leave -= days
+
+        balance.save()
+
+        leave.status = "Approved"
+        leave.save()
+
+        return Response({
+            "message":"Leave approved succesfully."
+        })
+    
+class RejectLeaveAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self,request,pk):
+
+        leave = get_object_or_404(
+            LeaveRequest,
+            pk=pk
+        )
+
+        if leave.status != "Pending":
+            return Response(
+                {"message":"Leave already processed."},
+                status=400
+            )
+        
+        leave.status = "Rejected"
+        leave.save()
+
+        return Response({
+            "message":"Leave rejected succesfully."
+        })
