@@ -266,11 +266,23 @@ class HRLeaveListAPIView(APIView):
 
         serializer = HRLeaveSerializer(
             leaves,
-            many=True,
-            context={"request":request}
+            many=True
         )
 
-        return Response(serializer.data)
+        summary = {
+            "total": leaves.count(),
+            "pending": leaves.filter(status="Pending").count(),
+            "approved": leaves.filter(status="Approved").count(),
+            "rejected": leaves.filter(status="Rejected").count(),
+        }
+
+        return Response(
+            {
+                "summary":summary,
+                "leave_requests": serializer.data,
+                "activities": []
+            }
+        )
     
 
 class HRLeaveDetailAPIView(APIView):

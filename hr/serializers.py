@@ -241,5 +241,5 @@ class HRLeaveSerializer(serializers.ModelSerializer):
     def get_department(self,obj):
         return obj.user.employee.department
     
-    def het_total_days(self,obj):
+    def get_total_days(self,obj):
         return obj.total_days()
