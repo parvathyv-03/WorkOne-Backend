@@ -4,6 +4,7 @@ from employees.models import Employee
 from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveRequest
+from complaint.models import Complaint
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -243,3 +244,33 @@ class HRLeaveSerializer(serializers.ModelSerializer):
     
     def get_total_days(self,obj):
         return obj.total_days()
+    
+class HRComplaintSerializer(serializers.ModelSerializer):
+
+    employee_name = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Complaint
+        fields = [
+            "id",
+            "employee_name",
+            "employee_id",
+            "department",
+            "category",
+            "subject",
+            "description",
+            "status",
+            "created_at",
+        ]
+
+    def get_employee_name(self,obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
+    
+    def get_employee_id(self,obj):
+        return obj.user.employee.employee_id
+    
+    def get_department(self,obj):
+        return obj.user.employee.department
+    

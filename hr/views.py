@@ -6,7 +6,8 @@ from accounts.models import User
 from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveBalance
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer
+from complaint.models import Complaint,ComplaintTimeline
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
@@ -372,4 +373,97 @@ class RejectLeaveAPIView(APIView):
 
         return Response({
             "message":"Leave rejected succesfully."
+        })
+    
+    # FOR COMPLAINT
+
+class HRComplaintListAPIView(APIView):
+        
+        permission_classes=[IsAuthenticated]
+
+        def get(self,request):
+
+            complaints = Complaint.objects.select_related(
+                "user",
+                "user__employee"
+            ).order_by("created_at")
+
+            serializer = HRComplaintSerializer(complaints,many=True)
+
+            summary = {
+                "total": complaints.count(),
+                "pending": complaints.filter(status="Pending").count(),
+                "review": complaints.filter(status="In Review").count(),
+                "resolved": complaints.filter(status="Resolved").count(),
+                "escalated": complaints.filter(status="Escalated").count(),
+            }
+
+            return Response({
+                "summary":summary,
+                "complaints":serializer.data
+            })
+        
+
+# COMPLAINT DETAIL API
+
+class HRComplaintDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,pk):
+
+        complaint = get_object_404(
+            Complaint.objects.select_related(
+                "user",
+                "user__employee"
+            ),
+            pk=pk
+        )
+
+        serializer = HRComplaintSerializer(
+            complaint,
+            context={"request":request}
+        )
+
+        serializer = HRComplaintSerializer(
+            complaint,
+            context={"request":request}
+        )
+
+        return Response(serializer.data)
+    
+class UpdateComplaintStatusAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self,request,pk):
+
+        compalint= get_object_or_404(
+            Complaint,
+            pk=pk
+        )
+
+        status = request.data.get("status")
+
+        valid_status = [
+            "Pending",
+            "In Review",
+            "Escalated",
+            "Resolved"
+        ]
+
+        if status not in valid_status:
+            return Response(
+                {"message":"Invalid Status"},
+                status=400
+            )
+        
+        compalint.status = status
+        compalint.save()
+
+        ComplaintTimeline.objects.create(
+            compalint=compalint,
+            step=f"Status updated tp {status}"
+        )
+
+        return Response({
+            "message":"Complaint updated succesfully."
         })

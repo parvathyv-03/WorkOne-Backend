@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView
+from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView
 
 urlpatterns = [
    path("create-employee/",CreateEmployeeView.as_view()),
@@ -12,4 +12,7 @@ urlpatterns = [
    path("leaves/<int:pk>/",HRLeaveDetailAPIView.as_view()),
    path("leaves/<int:pk>/approve",ApproveLeaveAPIView.as_view()),
    path("leaves/<int:pk>/reject",RejectLeaveAPIView.as_view()),
+   path("hr/list/",HRComplaintListAPIView.as_view()),
+   path("hr/<int:pk>/",HRComplaintDetailAPIView.as_view()),
+   path("hr/update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
 ]  
