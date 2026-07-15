@@ -12,7 +12,7 @@ urlpatterns = [
    path("leaves/<int:pk>/",HRLeaveDetailAPIView.as_view()),
    path("leaves/<int:pk>/approve",ApproveLeaveAPIView.as_view()),
    path("leaves/<int:pk>/reject",RejectLeaveAPIView.as_view()),
-   path("hr/list/",HRComplaintListAPIView.as_view()),
-   path("hr/<int:pk>/",HRComplaintDetailAPIView.as_view()),
-   path("hr/update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
+   path("complaints/list/",HRComplaintListAPIView.as_view()),
+   path("<int:pk>/",HRComplaintDetailAPIView.as_view()),
+   path("update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
 ]  

@@ -245,6 +245,8 @@ class HRLeaveSerializer(serializers.ModelSerializer):
     def get_total_days(self,obj):
         return obj.total_days()
     
+    # HR COMPLAINT DASHBOARD 
+    
 class HRComplaintSerializer(serializers.ModelSerializer):
 
     employee_name = serializers.SerializerMethodField()

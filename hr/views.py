@@ -398,9 +398,27 @@ class HRComplaintListAPIView(APIView):
                 "escalated": complaints.filter(status="Escalated").count(),
             }
 
+            timeline = (
+                ComplaintTimeline.objects
+                .select_related("complaint","complaint__user")
+                .order_by("-created_at")[:10]
+            )
+
+            activities = []
+
+            for item in timeline:
+                activities.append({
+                    "id":item.id,
+                    "complaint":f"CMP-{item.complaint.id:04d}",
+                    "employee_name":f"{item.complaint.user.first_name} {item.complaint.user.last_name}",
+                    "action": item.step,
+                    "time":item.created_at,
+                })
+
             return Response({
                 "summary":summary,
-                "complaints":serializer.data
+                "complaints":serializer.data,
+                "activities":activities,
             })
         
 
@@ -411,7 +429,7 @@ class HRComplaintDetailAPIView(APIView):
 
     def get(self,request,pk):
 
-        complaint = get_object_404(
+        complaint = get_object_or_404(
             Complaint.objects.select_related(
                 "user",
                 "user__employee"
@@ -436,7 +454,7 @@ class UpdateComplaintStatusAPIView(APIView):
 
     def patch(self,request,pk):
 
-        compalint= get_object_or_404(
+        complaint= get_object_or_404(
             Complaint,
             pk=pk
         )
@@ -456,12 +474,12 @@ class UpdateComplaintStatusAPIView(APIView):
                 status=400
             )
         
-        compalint.status = status
-        compalint.save()
+        complaint.status = status
+        complaint.save()
 
         ComplaintTimeline.objects.create(
-            compalint=compalint,
-            step=f"Status updated tp {status}"
+            complaint=complaint,
+            step=f"Status updated to {status}"
         )
 
         return Response({
