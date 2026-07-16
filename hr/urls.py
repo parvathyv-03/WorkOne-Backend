@@ -13,6 +13,6 @@ urlpatterns = [
    path("leaves/<int:pk>/approve",ApproveLeaveAPIView.as_view()),
    path("leaves/<int:pk>/reject",RejectLeaveAPIView.as_view()),
    path("complaints/list/",HRComplaintListAPIView.as_view()),
-   path("<int:pk>/",HRComplaintDetailAPIView.as_view()),
-   path("update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
+   path("complaints/<int:pk>/",HRComplaintDetailAPIView.as_view()),
+   path("complaints/update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
 ]  

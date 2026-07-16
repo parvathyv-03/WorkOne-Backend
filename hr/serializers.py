@@ -4,7 +4,7 @@ from employees.models import Employee
 from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveRequest
-from complaint.models import Complaint
+from complaint.models import Complaint,ComplaintTimeline
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -276,3 +276,14 @@ class HRComplaintSerializer(serializers.ModelSerializer):
     def get_department(self,obj):
         return obj.user.employee.department
     
+class ComplaintTimelineSerializer(serializers.ModelSerializer):
+    complaint_id = serializers.IntegerField(source="complaint.id")
+
+    class Meta:
+        model = ComplaintTimeline
+        fields=[
+            "id",
+            "complaint_id",
+            "step",
+            "created_at",
+        ]
