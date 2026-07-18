@@ -287,3 +287,16 @@ class ComplaintTimelineSerializer(serializers.ModelSerializer):
             "step",
             "created_at",
         ]
+
+class ComplaintTimelineSerializer(serializers.ModelSerializer):
+
+    complaint_id = serializers.IntegerField(source="complaint.id")
+
+    class Meta:
+        model = ComplaintTimeline
+        fields = [
+            "id",
+            "complaint_id",
+            "step",
+            "created_at",
+        ]

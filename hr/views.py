@@ -7,12 +7,14 @@ from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveBalance
 from complaint.models import Complaint,ComplaintTimeline
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer,ComplaintTimelineSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListAPIView
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 
+from django.utils import timezone
 from django.http import HttpResponse
 from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
 from reportlab.lib import colors
@@ -479,9 +481,144 @@ class UpdateComplaintStatusAPIView(APIView):
 
         ComplaintTimeline.objects.create(
             complaint=complaint,
-            step=f"Status updated to {status}"
+            step=f"Status updated to {complaint.status}"
         )
 
         return Response({
             "message":"Complaint updated succesfully."
         })
+    
+
+class ComplaintTimelineAPIView(ListAPIView):
+
+    serializer_class = ComplaintTimelineSerializer
+
+    def get_queryset(self):
+        return (
+            ComplaintTimeline.objects
+            .select_related("complaint")
+            .order_by("-created_at")[:3]
+        )
+    
+class AttendanceAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = timezone.now().date()
+
+        total_employees = Employee.objects.count()
+
+        today_records = Attendance.objects.filter(attendance_date=today)
+
+        present = today_records.filter(status__in=["Present","Late"]).count()
+
+        attendance_rate = 0
+        if total_employees > 0:
+            attendance_rate =round((present/total_employees) *100,2)
+
+            total_hours = 0
+            worked_count = 0
+
+            for record in today_records:
+                if record.work_hours:
+                    total_hours += (record.work_hours.total_seconds() / 3600)
+                    worked_count += 1
+            average_hours = 0 
+            if worked_count > 0:
+                 average_hours = round(
+                     total_hours / worked_count,2
+                 )
+            
+            check_in = today_records.filter(
+                check_in__isnull=False,
+                check_out__isnull=True
+            ).count()
+
+            return Response({
+                "attendance_rate": attendance_rate,
+                "average_working_hours": average_hours,
+                "check_in_employees": check_in
+            })
+        
+class HRAttendanceSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = timezone.now().date()
+
+        total_employees = Employee.objects.cout()
+
+        today_records = Attendance.objects.filter(attendance_date=today)
+
+        present_today = today_records.filter(status__in=["Present","Late"]).count()
+
+        late_today = today_records.filter(status="Late").count()
+
+        absent_today = max(total_employees - present_today,0)
+
+        return Response({
+            "total_employees": total_employees,
+            "present_today":present_today,
+            "late_today":late_today,
+            "absent_today":absent_today,
+        })
+    
+class HRAttendanceListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = timezone.now().date()
+
+        employees = Employee.objects.select_related("user")
+        
+        records = []
+
+        for employee in employees:
+
+            attendance = Attendance.objects.filter(user=employee.user,attendance_date=today).first()
+
+            if attendance:
+
+                if attendance.check_in:
+                    check_in = attendance.check_in.strftime("%I:%M %p")
+                else:
+                    check_in= "--"
+
+                if attendance.check_out:
+                    check_out = attendance.check_out.strftime("%I:%M %p")
+                else:
+                    check_out = "--"
+
+                if attendance.work_hours:
+                    hours = round(attendance.work_hours.total_seconds() / 3600,2)
+                    hours_worked = f"{hours}h"
+                else:
+                    hours_worked = "--"
+
+                punctuality = (
+                    "Late"
+                    if attendance.status == "Late"
+                    else "On Time"
+                )
+
+                status = attendance.status
+
+            else:
+                check_in = "--"
+                check_out = "--"
+                hours_worked = "--"
+                status = "Absent"
+                punctuality = "Absent"
+
+            records.append({
+                "id": employee.employee_id,
+                "name": employee.user.get_full_name(),
+                "department": employee.department,
+                "checkIn": check_in,
+                "checkOut": check_out,
+                "hoursWorked": hours_worked,
+                "status": status,
+                "punctuality": punctuality,
+            })
+
+        return Response(records)

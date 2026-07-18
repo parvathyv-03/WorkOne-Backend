@@ -13,7 +13,11 @@ class CheckInView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self,request):
-        today = timezone.now().date()
+        OFFICE_START_TIME = time(9,0)
+
+        now = timezone.localtime()
+        today = now().date()
+
         existing = Attendance.objects.filter(user=request.user,attendance_date=today).first()
 
         if existing:
@@ -24,8 +28,13 @@ class CheckInView(APIView):
                 },
                 status=400
             )
+
+        status="Present"
+
+        if now.time() > OFFICE_START_TIME:
+            status = "Late"
         
-        attendance = Attendance.objects.create(user=request.user,check_in=timezone.now())
+        attendance = Attendance.objects.create(user=request.user,check_in=now,status=status)
 
         return Response(
             {
@@ -84,13 +93,13 @@ class AttendanceStatusView(APIView):
         if not attendance:
             return Response(
                 {
-                    "checked_in":False
+                    "check_in":False
                 }
             )
         
         return Response(
             {
-                "checked_in":True,
+                "check_in":True,
                 "check_in":
                 attendance.check_in,
                 "checked_out":
@@ -120,6 +129,24 @@ class MonthlyReportView(APIView):
             attendance_date__year=year
         ).order_by("attendance_date")
 
+        today = timezone.localdate()
+
+        days_in_month = calendar.monthrange(year,month)[1]
+
+        # if current month count till today
+        if year == today.year and month == today.month:
+            last_day = today.day
+        else:
+            last_day = days_in_month
+
+        working_days = 0 
+
+        for day in range(1,last_day+1):
+            weekday = calendar.weekday(year,month,day)
+
+            if weekday != 6:
+                working_days += 1
+
         rows= []
 
         present_days = 0
@@ -140,10 +167,8 @@ class MonthlyReportView(APIView):
             if record.status == "Present":
                 present_days += 1
             
-            elif record.status == "Absent":
-                absent_days += 1
-            
             elif record.status == "Late":
+                present_days += 1
                 late_days += 1
 
             rows.append({
@@ -155,6 +180,8 @@ class MonthlyReportView(APIView):
                 "status":record.status
             })
 
+        absent_days = max(working_days - present_days, 0)
+
         summary = {
             "present_days":present_days,
             "absent_days": absent_days,
@@ -164,11 +191,11 @@ class MonthlyReportView(APIView):
 
         attendance_percentage = 0
 
-        total_days = present_days + late_days + absent_days 
+        total_days = present_days + absent_days 
 
         if total_days > 0:
             attendance_percentage = round(
-                ((present_days + late_days)/total_days) * 100,
+                ((present_days)/total_days) * 100,
                 2
             )
 
@@ -341,7 +368,7 @@ class AttendanceSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request):
-        today = timezone.now()
+        today = timezone.localdate()
 
         records = Attendance.objects.filter(
             user=request.user,
@@ -350,11 +377,7 @@ class AttendanceSummaryView(APIView):
         )
 
         present_days = records.filter(
-            status="Present"
-        ).count()
-
-        absent_days = records.filter(
-            status="Absent"
+            check_in__isnull=False
         ).count()
 
         late_days = records.filter(
@@ -369,6 +392,17 @@ class AttendanceSummaryView(APIView):
                     record.work_hours.total_seconds()
                     /3600
                 )
+
+        working_days = 0
+        for day in range(1,today.day +1):
+            current_date = date(today.year,today.month,day)
+
+            # monday=0,sunday=6
+            if current_date.weekday() <5:
+                working_days += 1
+        
+        absent_days = max(0,working_days - present_days)
+
         return Response({
             "present_days":present_days,
             "absent_days":absent_days,
