@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 
 from django.utils import timezone
+from datetime import timedelta
 from django.http import HttpResponse
 from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
 from reportlab.lib import colors
@@ -546,7 +547,7 @@ class HRAttendanceSummaryView(APIView):
     def get(self,request):
         today = timezone.now().date()
 
-        total_employees = Employee.objects.cout()
+        total_employees = Employee.objects.count()
 
         today_records = Attendance.objects.filter(attendance_date=today)
 
@@ -622,3 +623,32 @@ class HRAttendanceListView(APIView):
             })
 
         return Response(records)
+    
+class HRWeeklyAttendanceGraphView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        today = timezone.now().date()
+
+        # monday of current week
+        start_date = today - timedelta(days=today.weekday())
+
+        data =[]
+
+        for i in range(6):
+            current_date = start_date +timedelta(days=i)
+
+            on_time = Attendance.objects.filter(
+                attendance_date=current_date,
+                status="Present"
+            ).count()
+
+            late = Attendance.objects.filter(attendance_date=current_date,status="Late").count()
+
+            data.append({
+                "day": current_date.strftime("%a"),
+                "date": current_date.strftime("%d-%m"),
+                "on_time":on_time,
+                "late":late,
+            })
+        return Response(data)

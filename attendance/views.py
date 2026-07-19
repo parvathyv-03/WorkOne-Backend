@@ -16,7 +16,7 @@ class CheckInView(APIView):
         OFFICE_START_TIME = time(9,0)
 
         now = timezone.localtime()
-        today = now().date()
+        today = now.date()
 
         existing = Attendance.objects.filter(user=request.user,attendance_date=today).first()
 

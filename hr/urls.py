@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView
+from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView,HRAttendanceListView,HRAttendanceSummaryView,HRWeeklyAttendanceGraphView
 
 urlpatterns = [
    path("create-employee/",CreateEmployeeView.as_view()),
@@ -17,6 +17,7 @@ urlpatterns = [
    path("complaints/update/<int:pk>/",UpdateComplaintStatusAPIView.as_view()),
    path("complaints/activity/",ComplaintTimelineAPIView.as_view()),
    path("attendance/analytics/",AttendanceAnalyticsView.as_view()),
-   path("attendance/summary/",AttendanceAnalyticsView.as_view()),
-   path("attendance/list/",AttendanceAnalyticsView.as_view()),
+   path("attendance/summary/",HRAttendanceSummaryView.as_view()),
+   path("attendance/list/",HRAttendanceListView.as_view()),
+   path("attendance/weekly-graph/",HRWeeklyAttendanceGraphView.as_view()),
 ]  
