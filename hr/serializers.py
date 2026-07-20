@@ -5,6 +5,7 @@ from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveRequest
 from complaint.models import Complaint,ComplaintTimeline
+from notification.models import Notification
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -300,3 +301,10 @@ class ComplaintTimelineSerializer(serializers.ModelSerializer):
             "step",
             "created_at",
         ]
+
+class HRNotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Notification
+        fields = "__all__"
+        read_only_fields = ["created_at"]

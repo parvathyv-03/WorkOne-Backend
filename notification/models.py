@@ -10,12 +10,27 @@ class Notification(models.Model):
         ("System","System"),
     )
 
+    PRIORITY_CHOICES = (
+        ("Low","Low"),
+        ("Medium","Medium"),
+        ("High","High"),
+    )
+
+    STATUS_CHOICES =(
+        ("Draft","Draft"),
+        ("Published","Published"),
+    )
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
 
     category = models.CharField(max_length=30,choices=CATEGORY_CHOICES)
+
+    priority = models.CharField(max_length=20,choices=PRIORITY_CHOICES,default="Low")
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="Published")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.category
+        return self.title

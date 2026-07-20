@@ -13,6 +13,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
+import calendar
 
 from django.utils import timezone
 from datetime import timedelta
@@ -139,10 +140,7 @@ def export_employees_pdf(request):
             .first()
         )
 
-        if latest_attendance and latest_attendance.check_in and not latest_attendance.check_out:
-            status = "Active"
-        else:
-            status = "Inactive"
+
 
         data.append([
             employee.employee_id,
@@ -652,3 +650,175 @@ class HRWeeklyAttendanceGraphView(APIView):
                 "late":late,
             })
         return Response(data)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def hr_monthly_attendance_pdf(request):
+    employee_id = request.GET.get("employee_id")
+    month = int(request.GET.get("month"))
+    year = int(request.GET.get("year"))
+
+    employee = Employee.objects.filter(employee_id=employee_id).first()
+
+    if not employee:
+        return Response(
+            {
+                "message":"Employee ID does not exist."
+            },
+            status=404
+        )
+
+    attendance = Attendance.objects.filter(
+        user=employee.user,
+        attendance_date__month=month,
+        attendance_date__year=year
+    ).order_by("attendance_date")
+
+    response = HttpResponse(content_type="application/pdf")
+    response["content-Disposition"]= (
+     f'inline; filename="{employee.employee_id}_attendance.pdf'
+    )
+    doc = SimpleDocTemplate(response)
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(
+        Paragraph("<b>Monthly Attendance Report</b>",styles["Heading1"])
+    )
+
+    elements.append(
+        Paragraph(
+            f"Employee ID: {employee.employee_id}",
+            styles["Normal"]
+        )
+    )
+
+    elements.append(
+        Paragraph(
+            f"Department:{employee.department}",
+            styles["Normal"]
+        )
+    )
+
+    elements.append(
+        Paragraph(
+            f"Month:{month}/{year}",
+            styles["Normal"]
+        )
+    )
+
+    elements.append(Paragraph("<br/>",styles["Normal"]))
+
+    data = [[
+        "Date",
+        "Day",
+        "Check In",
+        "Check Out",
+        "Hours",
+        "Status"
+    ]]
+
+    present = 0
+    late = 0 
+    total_hours = 0
+
+    for record in attendance:
+        hours = 0
+
+        if record.work_hours:
+            hours = round(
+                record.work_hours.total_seconds() /3600,
+                2
+            )
+
+        total_hours += hours
+
+        if record.status == "Present":
+            present += 1
+
+        elif record.status == "Late":
+            present += 1
+            late += 1
+
+        data.append([
+            record.attendance_date.strftime("%d-%m-%Y"),
+            record.attendance_date.strftime("%A"),
+            record.check_in.strftime("%I:%M %p") if record.check_in else "-",
+            record.check_out.strftime("%I:%M %p") if record.check_out else "-",
+            f"{hours}h",
+            record.status,
+        ])
+
+    absent = max(
+        calendar.monthrange(year,month)[1] - present,
+        0
+    )
+
+    data.append([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+    ])
+
+    data.append([
+        "",
+        "",
+        "",
+        "Present",
+        "",
+        present
+    ])
+
+    data.append([
+        "",
+        "",
+        "",
+        "Absent",
+        "",
+        absent
+    ])
+
+    data.append([
+        "",
+        "",
+        "",
+        "Late",
+        "",
+        late
+    ])
+
+    data.append([
+        "",
+        "",
+        "",
+        "TotalHours",
+        "",
+        round(total_hours,2)
+    ])
+
+    table = Table(data)
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#36136E")),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+
+        ("GRID",(0,0),(-1,-1),1,colors.grey),
+
+        ("BACKGROUND",(0,1),(-1,-1),colors.beige),
+
+        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+
+        ("BOTTOMPADDING",(0,0),(-1,0),10),
+
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+    ]))
+
+    elements.append(table)
+
+    doc.build(elements)
+
+    return response
