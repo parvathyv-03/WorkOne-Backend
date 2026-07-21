@@ -7,7 +7,8 @@ from attendance.models import Attendance
 from documents.models import EmployeeDocument
 from leave_management.models import LeaveBalance
 from complaint.models import Complaint,ComplaintTimeline
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer,ComplaintTimelineSerializer
+from notification.models import Notification
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer,ComplaintTimelineSerializer,HRNotificationSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import permission_classes
@@ -822,3 +823,50 @@ def hr_monthly_attendance_pdf(request):
     doc.build(elements)
 
     return response
+
+class HRNotificationListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        notifications = Notification.objects.all().order_by("-created_at")
+
+        serializer = HRNotificationSerializer(notifications,many=True)
+
+        summary = {
+            "total_notifications": notifications.count(),
+            "hr_announcements": notifications.filter(category="Leave").count(),
+            "leave_updates": notifications.filter(category="Leave").count(),
+            "complaint_updates": notifications.filter(category="Complaint").count(),
+            "system_notifications":notifications.filter(category="System").count(),
+        }
+
+        return Response({
+            "summary":summary,
+            "notifications":serializer.data,
+        })
+
+class PublishNotificationApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request):
+        serializer = HRNotificationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            employees = Employee.objects.select_related("user")
+
+            for employee in employees:
+
+                Notification.objects.create(
+                    user=employee.user,
+                    title=serializer.validated_data["title"],
+                    description=serializer.validated_data["description"],
+                    category=serializer.validated_data["category"],
+                    priority=serializer.validated_data["priority"],
+                    status=serializer.validated_data["status"],
+                )
+
+            return Response(
+                {"message":"Notification published successfully."},
+                status=201,
+            )
+        return Response(serializer.errors,status=400)
