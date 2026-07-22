@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import uuid
 
 # Create your models here.
 class Notification(models.Model):
@@ -21,6 +22,7 @@ class Notification(models.Model):
         ("Published","Published"),
     )
 
+    notification_group = models.UUIDField(default=uuid.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()

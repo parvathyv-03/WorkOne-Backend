@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView,HRAttendanceListView,HRAttendanceSummaryView,HRWeeklyAttendanceGraphView,hr_monthly_attendance_pdf,HRNotificationListAPIView,PublishNotificationApiView
+from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView,HRAttendanceListView,HRAttendanceSummaryView,HRWeeklyAttendanceGraphView,hr_monthly_attendance_pdf,HRNotificationListAPIView,PublishNotificationApiView,DeleteNotificationAPIView
 
 urlpatterns = [
    path("create-employee/",CreateEmployeeView.as_view()),
@@ -23,4 +23,5 @@ urlpatterns = [
    path("attendance/monthly-report/pdf/",hr_monthly_attendance_pdf),
    path("notifications/list/",HRNotificationListAPIView.as_view()),
    path("notifications/publish/",PublishNotificationApiView.as_view()),
+   path("notifications/delete/<uuid:group_id>/",DeleteNotificationAPIView.as_view()),
 ]

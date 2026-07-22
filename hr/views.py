@@ -15,6 +15,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 import calendar
+import uuid
 
 from django.utils import timezone
 from datetime import timedelta
@@ -834,7 +835,7 @@ class HRNotificationListAPIView(APIView):
 
         summary = {
             "total_notifications": notifications.count(),
-            "hr_announcements": notifications.filter(category="Leave").count(),
+            "hr_announcements": notifications.filter(category="HR Announcement").count(),
             "leave_updates": notifications.filter(category="Leave").count(),
             "complaint_updates": notifications.filter(category="Complaint").count(),
             "system_notifications":notifications.filter(category="System").count(),
@@ -854,9 +855,12 @@ class PublishNotificationApiView(APIView):
         if serializer.is_valid():
             employees = Employee.objects.select_related("user")
 
+            group_id = uuid.uuid4()
+
             for employee in employees:
 
                 Notification.objects.create(
+                    notification_group=group_id,
                     user=employee.user,
                     title=serializer.validated_data["title"],
                     description=serializer.validated_data["description"],
@@ -870,3 +874,15 @@ class PublishNotificationApiView(APIView):
                 status=201,
             )
         return Response(serializer.errors,status=400)
+    
+class DeleteNotificationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,group_id):
+        Notification.objects.filter(
+            notification_group=group_id
+        ).delete()
+
+        return Response(
+            {"message":"Notification deleted successfully."}
+        )
