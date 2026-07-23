@@ -6,6 +6,7 @@ from documents.models import EmployeeDocument
 from leave_management.models import LeaveRequest
 from complaint.models import Complaint,ComplaintTimeline
 from notification.models import Notification
+from payslip.models import Payslip
 
 class CreateEmployeeSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -308,3 +309,45 @@ class HRNotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = "__all__"
         read_only_fields = ["user","created_at"]
+
+class HRPayslipSerializer(serializers.ModelSerializer):
+    employee_id = serializers.CharField(source="user.employee.employee_id")
+    employee_name = serializers.SerializerMethodField()
+    department = serializers.CharField(source="user.employee.department")
+    gross_salary = serializers.DecimalField(
+        source="total_earnings",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+    deductions = serializers.DecimalField(
+        source="total_deductions",
+        max_digits=10,
+        decimal_places=2,
+        read_only = True
+    )
+
+    pdf_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payslip
+        fields = [
+            "id",
+            "employee_id",
+            "employee_name",
+            "department",
+            "month",
+            "gross_salary",
+            "deductions",
+            "net_salary",
+            "status",
+            "pdf_url",
+        ]
+
+    def get_employee_name(self,obj):
+        return obj.user.get_full_name()
+    
+    def get_pdf_url(self,obj):
+        if obj.pdf_file:
+            return obj.pdf_file.url
+        return None

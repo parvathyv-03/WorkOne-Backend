@@ -8,7 +8,8 @@ from documents.models import EmployeeDocument
 from leave_management.models import LeaveBalance
 from complaint.models import Complaint,ComplaintTimeline
 from notification.models import Notification
-from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer,ComplaintTimelineSerializer,HRNotificationSerializer
+from payslip.models import Payslip
+from .serializers import CreateEmployeeSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,HRDocumentSerializer,LeaveRequest,HRLeaveSerializer,HRComplaintSerializer,ComplaintTimelineSerializer,HRNotificationSerializer,HRPayslipSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import permission_classes
@@ -886,3 +887,21 @@ class DeleteNotificationAPIView(APIView):
         return Response(
             {"message":"Notification deleted successfully."}
         )
+    
+# FOR HR DASHBOARD PAYSLIP
+
+class HRPayslipAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        payslips = Payslip.objects.select_related(
+            "user",
+            "user__employee"
+        ).order_by("-id")
+
+        serilaizer = HRPayslipSerializer(
+            payslips,
+            many=True
+        )
+
+        return Response(serilaizer.data)
