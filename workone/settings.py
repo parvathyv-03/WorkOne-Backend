@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'payslip',
     'notification',
     'hr',
+    'recruitment',
 ]
 
 MIDDLEWARE = [
