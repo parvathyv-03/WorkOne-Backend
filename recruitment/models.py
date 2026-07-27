@@ -57,3 +57,34 @@ class JobOpening(models.Model):
 
     def __str__(self):
         return self.title
+
+class CandidateApplication(models.Model):
+
+    STATUS_CHOICES =[
+        ("Sourced","Sourced"),
+        ("In Progress","In Progress"),
+        ("Interview","Interview"),
+        ("Hired","Hired"),
+        ("Rejected","Rejected"),
+    ]
+
+    job = models.ForeignKey(
+        JobOpening,
+        on_delete=models.CASCADE,
+        related_name="candidates"
+    )
+
+    name = models.CharField(max_length=150)
+
+    email = models.EmailField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Sourced"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
