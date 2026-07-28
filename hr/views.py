@@ -25,6 +25,13 @@ from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph
+
+
+from datetime import date
+
+from django.db.models import Count
+from leave_management.models import LeaveRequest
+from recruitment.models import JobOpening,CandidateApplication
 # Create your views here.
 # hrdashboard summary api
 
@@ -905,3 +912,94 @@ class HRPayslipAPIView(APIView):
         )
 
         return Response(serilaizer.data)
+
+class HRDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+
+        # summary cards
+
+        total_employees = Employee.objects.count()
+
+        today_attendance = Attendance.objects.filter(attendance_date=date.today()).count()
+        pending_leave_requests = LeaveRequest.objects.filter(status="Pending").count()
+
+        open_complaints = Complaint.objects.exclude(status="Resolved").count()
+
+        active_jobs = JobOpening.objects.filter(status__in=["Open","Hiring"]).count()
+
+        total_departments = Employee.objects.values("department").distinct().count()
+
+        summary = {
+            "total_employees":total_employees,
+            "today_attendance":today_attendance,
+            "pending_leave_requests":pending_leave_requests,
+            "open_complaints":open_complaints,
+            "upcoming_interviews":active_jobs,
+            "departments":total_departments,
+        }
+
+        # DEPARTMENT OVERVIEW
+
+        department_overview = list(Employee.objects.values("department").annotate(count=Count("id")).order_by("department"))
+
+        department_overview = [
+            {
+                "name": dept["department"],
+                "count": dept["count"],
+            }
+            for dept in department_overview
+        ]
+
+        # ATTENDANCE OVERVIEW
+
+        present = Attendance.objects.filter(attendance_date=date.today(),status="Present").count()
+        late = Attendance.objects.filter(attendance_date=date.today(),status="Late").count()
+        absent = Attendance.objects.filter(attendance_date=date.today(),status="Absent").count()
+
+        total = present + late + absent
+
+        attendance_rate = 0
+
+        if total > 0:
+            attendance_rate =round(((present+late)/total)* 100)
+
+        attendance = {
+            "present":present,
+            "late":late,
+            "absent":absent,
+            "attendance_rate":attendance_rate,
+        }
+
+        # RECRUITMENT PIPELINE
+
+        recruitment = []
+
+        for stage,_ in CandidateApplication.STATUS_CHOICES:
+            recruitment.append({"stage":stage,"count":CandidateApplication.objects.filter(status=stage).count()})
+
+        # RECENT NOTIFICATIONS
+
+        notifications = []
+
+        recent_notifications = Notification.objects.filter(status="Published").order_by("-created_at")[:5]
+
+        for notification in recent_notifications:
+            notifications.append({
+                "title":notification.title,
+                "message":notification.description,
+                "time":notification.created_at.strftime("%d %b %Y %I:%M %p"),
+            })
+
+        # FINAL RESPONSE
+
+        return Response({
+            "summary":summary,
+            "department_overview":department_overview,
+            "attendance":attendance,
+            "recruitment":recruitment,
+            "notifications":notifications,
+        })
+
+        

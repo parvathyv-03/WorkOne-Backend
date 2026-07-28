@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView,HRAttendanceListView,HRAttendanceSummaryView,HRWeeklyAttendanceGraphView,hr_monthly_attendance_pdf,HRNotificationListAPIView,PublishNotificationApiView,DeleteNotificationAPIView,HRPayslipAPIView
+from .views import CreateEmployeeView,EmployeeListView,export_employees_pdf,EmployeeDetailView,HRDocumentListView,VerifyDocumentView,HRLeaveListAPIView,HRLeaveDetailAPIView,ApproveLeaveAPIView,RejectLeaveAPIView,HRComplaintListAPIView,UpdateComplaintStatusAPIView,HRComplaintDetailAPIView,ComplaintTimelineAPIView,AttendanceAnalyticsView,HRAttendanceListView,HRAttendanceSummaryView,HRWeeklyAttendanceGraphView,hr_monthly_attendance_pdf,HRNotificationListAPIView,PublishNotificationApiView,DeleteNotificationAPIView,HRPayslipAPIView,HRDashboardAPIView
 
 urlpatterns = [
    path("create-employee/",CreateEmployeeView.as_view()),
@@ -25,4 +25,5 @@ urlpatterns = [
    path("notifications/publish/",PublishNotificationApiView.as_view()),
    path("notifications/delete/<uuid:group_id>/",DeleteNotificationAPIView.as_view()),
    path("payslips/list/",HRPayslipAPIView.as_view()),
+   path("dashboard/",HRDashboardAPIView.as_view(),name="hr-dashboard")
 ]

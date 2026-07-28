@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/notifications/",include("notification.urls")),
     path("api/hr/", include("hr.urls")),
     path("api/recruitment/",include("recruitment.urls")),
+    path("api/hr/reports/",include("reports.urls")),
 ]
 
 if settings.DEBUG:
