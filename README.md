@@ -18,21 +18,6 @@
 
 ---
 
-## HRMS Modules
-
-- Employee Management
-- Employee Profile Management
-- Attendance Management
-- Leave Management
-- Leave Approval
-- Complaint Management
-- Notification Management
-- Payslip Management
-- Dashboard APIs
-- HR Analytics
-
----
-
 # 🛠 Tech Stack
 
 Technology 
