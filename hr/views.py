@@ -33,6 +33,7 @@ from django.db.models import Count
 from leave_management.models import LeaveRequest
 from recruitment.models import JobOpening,CandidateApplication
 # Create your views here.
+
 # hrdashboard summary api
 
 class HRDashboardView(APIView):
@@ -386,7 +387,7 @@ class RejectLeaveAPIView(APIView):
             "message":"Leave rejected succesfully."
         })
     
-    # FOR COMPLAINT
+# FOR COMPLAINT
 
 class HRComplaintListAPIView(APIView):
         

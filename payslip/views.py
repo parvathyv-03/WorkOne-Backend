@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Payslip
 
 # Create your views here.
+
 class PayslipDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 

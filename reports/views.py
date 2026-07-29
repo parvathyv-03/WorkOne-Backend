@@ -105,25 +105,25 @@ class LeaveAnalyticsAPIView(APIView):
                 "label": "Casual Leave Usage",
                 "value": percentage(casual),
                 "count": casual,
-                "color": "bg-violet-600"
+                "color": "violet"
             },
             {
                 "label": "Sick Leave Usage",
                 "value": percentage(sick),
                 "count": sick,
-                "color": "bg-sky-500"
+                "color": "blue"
             },
             {
                 "label": "Privilege Leave Usage",
                 "value": percentage(privilege),
                 "count": privilege,
-                "color": "bg-pink-500"
+                "color": "pink"
             },
             {
                 "label": "Pending Leave Requests",
                 "value": percentage(pending),
                 "count": pending,
-                "color": "bg-yellow-500"
+                "color": "yellow"
             }
         ]
 

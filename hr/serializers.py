@@ -94,20 +94,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
     last_name =serializers.CharField(source="user.last_name")
     email =serializers.CharField(source="user.email")
-    # status = serializers.SerializerMethodField()
-
-    # def get_status(self,obj):
-    #     latest = (
-    #         Attendance.objects
-    #         .filter(user=obj.user)
-    #         .order_by("-attendance_date","-check_in")
-    #         .first()
-    #     )
-
-    #     if latest and latest.check_in and not latest.check_out:
-    #         return "Active"
-        
-    #     return "Inactive"
 
     class Meta:
         model = Employee
@@ -120,7 +106,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "department",
             "designation",
             "date_of_joining",
-            # "status",
         ]
     
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
