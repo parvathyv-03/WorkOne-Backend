@@ -22,11 +22,11 @@
 
 Technology 
 
-Python
-Django 
-Django REST Framework 
-SQLite
-JWT - Authentication
+- Python
+- Django 
+- Django REST Framework 
+- SQLite
+- JWT - Authentication
 
 ---
 
